@@ -1,0 +1,45 @@
+.main-container {
+  text-align: center;
+  font-family: Arial, sans-serif;
+  padding: 20px;
+}
+
+.escuelas {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  flex-wrap: wrap;
+  margin-top: 20px;
+}
+
+.escuela-card, .agregar-card {
+  width: 200px;
+  border: 1px solid #ccc;
+  border-radius: 12px;
+  padding: 10px;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.escuela-card:hover, .agregar-card:hover {
+  transform: scale(1.05);
+}
+
+.escuela-card img, .agregar-card img {
+  width: 100%;
+  height: 150px;
+  object-fit: cover;
+  border-radius: 8px;
+}
+
+.agregar-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: #555;
+}
+
+.agregar-card h3 {
+  margin-top: 10px;
+}
