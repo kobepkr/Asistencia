@@ -1,45 +1,113 @@
 .main-container {
   text-align: center;
-  font-family: Arial, sans-serif;
-  padding: 20px;
+  padding: 30px;
+  background-color: #f7f7ff;
+  min-height: 100vh;
+}
+
+h1 {
+  color: #4a3aff;
+  margin-bottom: 30px;
 }
 
 .escuelas {
   display: flex;
-  justify-content: center;
-  gap: 20px;
   flex-wrap: wrap;
-  margin-top: 20px;
+  justify-content: center;
+  gap: 25px;
 }
 
-.escuela-card, .agregar-card {
-  width: 200px;
-  border: 1px solid #ccc;
-  border-radius: 12px;
-  padding: 10px;
-  cursor: pointer;
+.escuela-card,
+.agregar-card {
+  background-color: white;
+  border-radius: 10px;
+  padding: 15px;
+  width: 230px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   transition: transform 0.2s;
 }
 
-.escuela-card:hover, .agregar-card:hover {
+.escuela-card:hover,
+.agregar-card:hover {
   transform: scale(1.05);
 }
 
-.escuela-card img, .agregar-card img {
+.escuela-card img,
+.agregar-card img {
   width: 100%;
   height: 150px;
   object-fit: cover;
   border-radius: 8px;
+  cursor: pointer;
 }
 
-.agregar-card {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  color: #555;
+.clickable {
+  cursor: pointer;
 }
 
-.agregar-card h3 {
+.acciones {
   margin-top: 10px;
+  display: flex;
+  justify-content: space-between;
 }
+
+.btn-ver,
+.btn-eliminar,
+.btn-volver {
+  padding: 6px 10px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.btn-ver {
+  background-color: #6c63ff;
+  color: white;
+}
+
+.btn-eliminar {
+  background-color: #ff5c5c;
+  color: white;
+}
+
+.btn-volver {
+  background-color: #f0ad4e;
+  color: white;
+  margin-bottom: 20px;
+}
+
+.detalle-escuela {
+  background: white;
+  padding: 25px;
+  border-radius: 12px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.detalle-foto {
+  width: 100%;
+  border-radius: 10px;
+  margin-bottom: 15px;
+}
+.acciones-detalle {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 20px;
+}
+
+.btn-actualizar {
+  background-color: #6c63ff;
+  color: white;
+  border: none;
+  padding: 10px 15px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.btn-actualizar:hover {
+  background-color: #584ce0;
+}
+

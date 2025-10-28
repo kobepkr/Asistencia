@@ -78,5 +78,19 @@ body {
   width: 120px; /* ajusta el tamaño */
   height: auto;
 }
+.forgot-password {
+  margin-top: 10px;
+  text-align: right;
+}
+
+.forgot-password a {
+  color: #6c63ff; /* azul morado */
+  text-decoration: none;
+  font-size: 0.9rem;
+}
+
+.forgot-password a:hover {
+  text-decoration: underline;
+}
 
 

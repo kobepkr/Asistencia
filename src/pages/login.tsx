@@ -1,7 +1,6 @@
 import React from "react";
 import "./login.css";
-import logo from "../assets/vl.png"; // <- Importa la imagen correctamente
-
+import logo from "../assets/vl.png"; // Importa la imagen correctamente
 
 const Login: React.FC = () => {
   return (
@@ -30,6 +29,11 @@ const Login: React.FC = () => {
           <button type="submit" className="btn-login">
             Iniciar Sesión
           </button>
+
+          {/* Link de olvido de contraseña */}
+          <div className="forgot-password">
+            <a href="/recuperarContrasena">¿Olvidaste tu contraseña?</a>
+          </div>
         </form>
       </div>
     </div>
