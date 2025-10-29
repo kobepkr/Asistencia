@@ -1,6 +1,5 @@
-// src/components/AlumnoList.tsx
 import React from "react";
-import { QRCodeSVG } from "qrcode.react"; // <- import correcto
+import { QRCodeSVG } from "qrcode.react";
 
 interface Alumno {
   nombre: string;
@@ -20,7 +19,7 @@ const AlumnoList: React.FC<Props> = ({ alumnos }) => {
         {alumnos.map((alumno, index) => (
           <li key={index} style={{ marginBottom: "20px" }}>
             <strong>{alumno.nombre}</strong> - {alumno.curso} <br />
-            <QRCodeSVG value={alumno.qr} size={128} /> {/* <-- QR generado */}
+            <QRCodeSVG value={alumno.qr} size={128} />
           </li>
         ))}
       </ul>
