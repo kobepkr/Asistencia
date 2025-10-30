@@ -44,3 +44,42 @@ You don’t have to ever use `eject`. The curated feature set is suitable for sm
 You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
 
 To learn React, check out the [React documentation](https://reactjs.org/).
+
+
+## para arrancar el proeycto 
+
+Como arrancar el proyecto 
+
+Primero abrir Visual studio Code 
+- ir a la carpeta raíz/ cd asistencia 
+- en consola command promt 
+- npm start 
+
+"Esto arranca lo que es el frontend  y muestra  una pagina en el localhost:3000"
+
+--------------------------------------------------------------------------------------------------------------
+Arrancar la base de datos 
+
+
+En cmd O un terminar entrar  ala dirección donde esta  ubicado la base de datos 
+
+en mi caso   la tengo en C:\Users\victo\Documents\Proyectos\BaseDatosMongo
+
+entonces en consola poner cd C:\Users\victo\Documents\Proyectos\BaseDatosMongo
+
+y luego poder el comando "mongod"
+
+"Esto  hace correr el servidor de mongodb   para poder conectarlo con mi backend"
+
+
+--------------------------------------------------------------------------------------------------------------------
+
+Prender backend  "Api"
+
+en el visual studioCode ir al proyecto  y entrar ala carpeta raíz del proyecto eh entrar ala carpeta backend 
+
+una ves ahí poner el comando "node server.js" esto arranca el backend  en el localhost:5000
+
+
+y los  tienes conectado el backend con la base de datos y el front
+
