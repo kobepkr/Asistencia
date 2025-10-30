@@ -1,96 +1,161 @@
+/* login.css */
+
+/* Fondo general */
 body {
-  margin: 0;
-  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-  background: linear-gradient(135deg, #3f51b5, #2196f3);
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background: linear-gradient(135deg, #667eea, #764ba2);
   height: 100vh;
+  margin: 0;
   display: flex;
   justify-content: center;
   align-items: center;
 }
 
+/* Contenedor del login */
 .login-container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  width: 100%;
-}
-
-.login-box {
-  background-color: rgba(255, 255, 255, 0.95);
+  background: white;
   padding: 40px 30px;
   border-radius: 15px;
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+  box-shadow: 0px 10px 30px rgba(0,0,0,0.2);
   width: 350px;
-  text-align: center;
-  transition: transform 0.3s ease, opacity 0.3s ease;
 }
 
-.login-box:hover {
-  transform: scale(1.02);
-  opacity: 1;
+/* Logo */
+.login-logo {
+  display: block;
+  margin: 0 auto 20px auto;
+  width: 100px;
+  height: auto;
 }
 
+/* Título */
 .login-box h2 {
-  margin-bottom: 25px;
+  text-align: center;
   color: #333;
+  margin-bottom: 25px;
+  font-size: 24px;
 }
 
+/* Grupos de input */
 .input-group {
   margin-bottom: 20px;
-  text-align: left;
 }
 
 .input-group label {
-  font-weight: bold;
-  font-size: 14px;
-  color: #333;
+  display: block;
+  margin-bottom: 5px;
+  color: #555;
+  font-weight: 500;
 }
 
 .input-group input {
   width: 100%;
-  padding: 10px;
-  margin-top: 6px;
+  padding: 12px;
   border: 1px solid #ccc;
   border-radius: 8px;
-  font-size: 15px;
+  font-size: 14px;
+  transition: 0.3s;
 }
 
+.input-group input:focus {
+  border-color: #667eea;
+  outline: none;
+  box-shadow: 0 0 5px rgba(102, 126, 234, 0.5);
+}
+
+/* Botón */
 .btn-login {
-  background-color: #3f51b5;
-  color: white;
-  padding: 12px;
   width: 100%;
+  padding: 12px;
+  background: #667eea;
+  color: white;
   border: none;
   border-radius: 8px;
   font-size: 16px;
   cursor: pointer;
-  font-weight: bold;
-  transition: background 0.3s ease, transform 0.2s ease;
+  transition: 0.3s;
 }
 
 .btn-login:hover {
-  background-color: #303f9f;
-  transform: translateY(-2px);
+  background: #5a67d8;
 }
-.login-logo {
-  display: block;
-  margin: 0 auto 20px;
-  width: 120px; /* ajusta el tamaño */
-  height: auto;
-}
-.forgot-password {
+
+/* Mensaje de error */
+.mensaje-error {
+  color: #e74c3c;
+  font-weight: 500;
+  text-align: center;
   margin-top: 10px;
-  text-align: right;
+}
+
+/* Olvido de contraseña */
+.forgot-password {
+  text-align: center;
+  margin-top: 15px;
 }
 
 .forgot-password a {
-  color: #6c63ff; /* azul morado */
+  color: #667eea;
   text-decoration: none;
-  font-size: 0.9rem;
+  font-size: 14px;
 }
 
 .forgot-password a:hover {
   text-decoration: underline;
 }
+.mensaje-exito {
+  color: #27ae60;
+  font-weight: 600;
+  text-align: center;
+  margin-top: 10px;
+  animation: fadeIn 1s ease-in-out;
+}
 
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+/* Modal centrado */
+.modal-bienvenida {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0,0,0,0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: fadeIn 0.5s ease;
+  z-index: 1000;
+}
 
+.modal-content {
+  background-color: #fff;
+  padding: 30px 40px;
+  border-radius: 10px;
+  text-align: center;
+  color: #27ae60;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+  animation: slideDown 0.5s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideDown {
+  from { transform: translateY(-20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+/* Mensaje de error */
+.mensaje-error {
+  color: #e74c3c;
+  font-weight: 600;
+  text-align: center;
+  margin-top: 10px;
+}
+
+/* Resto de tu CSS del login sigue igual */

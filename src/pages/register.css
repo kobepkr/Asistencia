@@ -1,0 +1,83 @@
+/* register.css */
+
+body {
+  font-family: 'Poppins', sans-serif;
+  background: linear-gradient(135deg, #6c63ff, #a29bfe);
+  margin: 0;
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.register-container {
+  background-color: #fff;
+  padding: 40px 30px;
+  border-radius: 16px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+  width: 100%;
+  max-width: 400px;
+  text-align: center;
+  animation: fadeIn 0.8s ease;
+}
+
+.register-container h2 {
+  margin-bottom: 25px;
+  color: #6c63ff;
+  font-weight: 700;
+}
+
+.register-container form {
+  display: flex;
+  flex-direction: column;
+}
+
+.register-container label {
+  text-align: left;
+  margin-bottom: 5px;
+  font-weight: 500;
+  color: #555;
+}
+
+.register-container input {
+  padding: 12px 15px;
+  margin-bottom: 20px;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  font-size: 15px;
+  transition: 0.3s;
+}
+
+.register-container input:focus {
+  border-color: #6c63ff;
+  box-shadow: 0 0 8px rgba(108, 99, 255, 0.3);
+  outline: none;
+}
+
+.register-container button {
+  padding: 14px;
+  border: none;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #6c63ff, #a29bfe);
+  color: white;
+  font-weight: 600;
+  font-size: 16px;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.register-container button:hover {
+  background: linear-gradient(135deg, #5952d4, #7f76f9);
+  transform: translateY(-2px);
+}
+
+.register-container .success-message {
+  color: #27ae60;
+  font-weight: 600;
+  margin-top: 15px;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
