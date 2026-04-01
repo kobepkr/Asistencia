@@ -2,7 +2,22 @@ import React, { useState } from 'react';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../firebase';
 
-
+// Paleta de colores suaves (igual que el resto del sistema)
+const colores = {
+  fondo: 'linear-gradient(135deg, #f0f7ff 0%, #e1eaf5 100%)',
+  tarjeta: '#ffffff',
+  texto: '#2c3e50',
+  textoSecundario: '#5e6f8d',
+  borde: '#d3e2f2',
+  accent: '#4f7eb3',
+  accentLight: '#e6f0fa',
+  success: '#2e8b57',
+  successLight: '#e3f5eb',
+  danger: '#b84a4a',
+  dangerLight: '#fae6e6',
+  warning: '#d9a13b',
+  warningLight: '#fef3e0'
+};
 
 function Login() {
   const [email, setEmail] = useState('');
@@ -18,7 +33,6 @@ function Login() {
     try {
       await signInWithEmailAndPassword(auth, email, password);
       console.log("Login exitoso, esperando redirección...");
-      // No necesitamos hacer nada más, onAuthStateChanged en App.jsx se encargará
     } catch (error) {
       console.error("Error de login:", error);
       setError("Email o contraseña incorrectos");
@@ -34,10 +48,10 @@ function Login() {
       display: 'flex',
       justifyContent: 'center',
       alignItems: 'center',
-      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+      background: colores.fondo,
       padding: '16px'
     }}>
-      {/* Fondo animado */}
+      {/* Fondo animado suave */}
       <div style={{
         position: 'fixed',
         inset: 0,
@@ -50,7 +64,7 @@ function Login() {
           left: '-10%',
           width: '500px',
           height: '500px',
-          background: 'rgba(168, 85, 247, 0.3)',
+          background: 'rgba(79, 126, 179, 0.1)',
           borderRadius: '50%',
           filter: 'blur(80px)',
           animation: 'float 20s infinite'
@@ -61,7 +75,7 @@ function Login() {
           right: '-10%',
           width: '500px',
           height: '500px',
-          background: 'rgba(236, 72, 153, 0.3)',
+          background: 'rgba(46, 139, 87, 0.1)',
           borderRadius: '50%',
           filter: 'blur(80px)',
           animation: 'float 20s infinite reverse'
@@ -74,60 +88,65 @@ function Login() {
         zIndex: 10,
         width: '100%',
         maxWidth: '400px',
-        background: 'rgba(255,255,255,0.1)',
-        backdropFilter: 'blur(10px)',
+        background: colores.tarjeta,
         borderRadius: '24px',
         padding: '40px',
-        border: '1px solid rgba(255,255,255,0.2)',
-        boxShadow: '0 20px 40px rgba(0,0,0,0.2)'
+        border: `1px solid ${colores.borde}`,
+        boxShadow: '0 20px 40px rgba(0, 0, 0, 0.1)'
       }}>
         {/* Logo */}
         <div style={{
           textAlign: 'center',
           marginBottom: '30px'
         }}>
-          <div style={{
-            width: '80px',
-            height: '80px',
 
-            borderRadius: '20px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontSize: '40px',
-            margin: '0 auto 20px'
-          }}>
-<div> 
-  <img src="/logo.png" alt="Logo" style={{
-    width: '80px',
-    height: '80px',
-    borderRadius: '20px',
-    objectFit: 'cover'
-  }} />
-</div>
+          <div> 
+        
+     
+          <div style={{
+              width: '80px',
+              height: '80px',
+              margin: '0 auto 20px',
+              borderRadius: '20px',
+              overflow: 'hidden',
+              background: colores.accentLight,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              boxShadow: '0 5px 15px rgba(79, 126, 179, 0.2)'
+            }}>
+              <img 
+                src="/logo.png" 
+                alt="Logo Colegio" 
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  objectFit: 'cover'
+                }}
+              />
+            </div>
           </div>
           <h1 style={{
-            color: 'white',
+            color: colores.texto,
             fontSize: '28px',
             fontWeight: 'bold',
             margin: '0 0 8px 0'
           }}>Educ Assist</h1>
           <p style={{
-            color: 'rgba(255,255,255,0.7)',
+            color: colores.textoSecundario,
             fontSize: '14px',
             margin: 0
-          }}>Inicia sesión para continuar</p>
+          }}>Sistema de Control de Asistencia</p>
         </div>
 
         {/* Formulario */}
         <form onSubmit={handleSubmit}>
           <div style={{ marginBottom: '20px' }}>
             <label style={{
-              color: 'white',
+              color: colores.textoSecundario,
               fontSize: '12px',
               marginBottom: '8px',
-              display: 'block',
-              opacity: 0.8
+              display: 'block'
             }}>
               📧 Email
             </label>
@@ -140,26 +159,25 @@ function Login() {
               style={{
                 width: '100%',
                 padding: '12px 16px',
-                background: 'rgba(255,255,255,0.1)',
-                border: '1px solid rgba(255,255,255,0.2)',
+                background: colores.tarjeta,
+                border: `1px solid ${colores.borde}`,
                 borderRadius: '12px',
-                color: 'white',
+                color: colores.texto,
                 fontSize: '14px',
                 outline: 'none',
                 transition: 'all 0.3s'
               }}
-              onFocus={(e) => e.target.style.borderColor = '#667eea'}
-              onBlur={(e) => e.target.style.borderColor = 'rgba(255,255,255,0.2)'}
+              onFocus={(e) => e.target.style.borderColor = colores.accent}
+              onBlur={(e) => e.target.style.borderColor = colores.borde}
             />
           </div>
 
           <div style={{ marginBottom: '30px' }}>
             <label style={{
-              color: 'white',
+              color: colores.textoSecundario,
               fontSize: '12px',
               marginBottom: '8px',
-              display: 'block',
-              opacity: 0.8
+              display: 'block'
             }}>
               🔒 Contraseña
             </label>
@@ -172,27 +190,27 @@ function Login() {
               style={{
                 width: '100%',
                 padding: '12px 16px',
-                background: 'rgba(255,255,255,0.1)',
-                border: '1px solid rgba(255,255,255,0.2)',
+                background: colores.tarjeta,
+                border: `1px solid ${colores.borde}`,
                 borderRadius: '12px',
-                color: 'white',
+                color: colores.texto,
                 fontSize: '14px',
                 outline: 'none',
                 transition: 'all 0.3s'
               }}
-              onFocus={(e) => e.target.style.borderColor = '#667eea'}
-              onBlur={(e) => e.target.style.borderColor = 'rgba(255,255,255,0.2)'}
+              onFocus={(e) => e.target.style.borderColor = colores.accent}
+              onBlur={(e) => e.target.style.borderColor = colores.borde}
             />
           </div>
 
           {error && (
             <div style={{
-              background: 'rgba(239,68,68,0.2)',
-              border: '1px solid rgba(239,68,68,0.3)',
+              background: colores.dangerLight,
+              border: `1px solid ${colores.danger}`,
               borderRadius: '12px',
               padding: '12px',
               marginBottom: '20px',
-              color: '#fecaca',
+              color: colores.danger,
               fontSize: '14px',
               textAlign: 'center'
             }}>
@@ -206,7 +224,7 @@ function Login() {
             style={{
               width: '100%',
               padding: '14px',
-              background: cargando ? 'rgba(255,255,255,0.2)' : 'linear-gradient(135deg, #667eea, #764ba2)',
+              background: cargando ? colores.textoSecundario : `linear-gradient(135deg, ${colores.accent}, ${colores.texto})`,
               border: 'none',
               borderRadius: '12px',
               color: 'white',
@@ -226,32 +244,16 @@ function Login() {
           marginTop: '30px',
           textAlign: 'center',
           padding: '20px',
-          background: 'rgba(255,255,255,0.05)',
+          background: colores.accentLight,
           borderRadius: '12px',
-          border: '1px solid rgba(255,255,255,0.1)'
+          border: `1px solid ${colores.borde}`
         }}>
           <p style={{
-            color: 'rgba(255,255,255,0.6)',
+            color: colores.textoSecundario,
             fontSize: '12px',
             margin: '0 0 8px 0'
           }}>
-            🔑 Para recuperar la contraseña hablar con el  admin
-          </p>
-          <p style={{
-            color: 'rgba(255,255,255,0.8)',
-            fontSize: '12px',
-            margin: '4px 0',
-            fontFamily: 'monospace'
-          }}>
-            
-          </p>
-          <p style={{
-            color: 'rgba(255,255,255,0.8)',
-            fontSize: '12px',
-            margin: '4px 0',
-            fontFamily: 'monospace'
-          }}>
-            
+            🔑 Para recuperar contraseña hablar con el administrador
           </p>
         </div>
       </div>
