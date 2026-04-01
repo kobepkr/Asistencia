@@ -9,6 +9,10 @@ import AdminLectorQR from './AdminLectorQR';
 import ReportesEscuela from './ReportesEscuela';
 import CalendarioEscolar from './CalendarioEscolar';
 import RellenarAsistencia from './RellenarAsistencia';
+import ReporteCurso from './ReporteCurso';
+
+
+
 
 // Paleta de colores suaves
 const colores = {
@@ -54,29 +58,32 @@ function AdminDashboard({ user }) {
     { id: 'calendario', nombre: 'Calendario', icono: '📅' }, 
     { id: 'reportes', nombre: 'Reportes', icono: '📊' },
     { id: 'rellenar', nombre: 'Rellenar Asistencia', icono: '📝' },
+    { id: 'reporte_curso', nombre: 'Asistencia por Curso', icono: '🏆' } 
   ];
 
   const renderContenido = () => {
-    switch(pestañaActiva) {
-      case 'asistencia':
-        return <AdminLectorQR user={user} />;
-      case 'profesores':
-        return <GestionarProfesores user={user} />;
-      case 'cursos':
-        return <GestionarCursos user={user} />;
-      case 'estudiantes':
-        return <GestionarEstudiantes user={user} />;
-      case 'reportes':
-        return <ReportesEscuela user={user} />;
-      case 'calendario':
-        return <CalendarioEscolar user={user} />;
-      case 'rellenar':
-        return <RellenarAsistencia user={user} />;
-      default:
-        return <AdminLectorQR user={user} />;
-        
-    }
-  };
+  switch(pestañaActiva) {
+    case 'asistencia':
+      return <AdminLectorQR user={user} />;
+    case 'profesores':
+      return <GestionarProfesores user={user} />;
+    case 'cursos':
+      return <GestionarCursos user={user} />;
+    case 'estudiantes':
+      return <GestionarEstudiantes user={user} />;
+    case 'calendario':
+      return <CalendarioEscolar user={user} />;
+    case 'rellenar':
+      return <RellenarAsistencia user={user} />;
+    case 'reportes':
+      return <ReportesEscuela user={user} />;
+    // 👇 PON EL NUEVO CASO AQUÍ, DESPUÉS DE LOS OTROS
+    case 'reporte_curso':
+      return <ReporteCurso user={user} />;
+    default:
+      return <AdminLectorQR user={user} />;
+  }
+};
 
   return (
     <div style={{
@@ -226,6 +233,7 @@ function AdminDashboard({ user }) {
           border: `1px solid ${colores.borde}`
         }}>
           {renderContenido()}
+          
         </div>
 
       </div>

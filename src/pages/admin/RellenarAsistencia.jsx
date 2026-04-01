@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { collection, getDocs, query, where, doc, updateDoc, getDoc, setDoc, writeBatch, addDoc } from 'firebase/firestore';
+import { collection, getDocs, query, where, doc, getDoc, addDoc, writeBatch } from 'firebase/firestore';
 import { db } from '../../firebase';
 import Calendar from 'react-calendar';
 import 'react-calendar/dist/Calendar.css';
@@ -27,12 +27,12 @@ function RellenarAsistencia({ user }) {
   const [cursoSeleccionado, setCursoSeleccionado] = useState('');
   const [estudianteSeleccionado, setEstudianteSeleccionado] = useState(null);
   const [fechasSeleccionadas, setFechasSeleccionadas] = useState([]);
+  const [fechasYaAsistidas, setFechasYaAsistidas] = useState([]);
   const [cargando, setCargando] = useState(false);
   const [mensaje, setMensaje] = useState('');
   const [configuracion, setConfiguracion] = useState(null);
   const [vista, setVista] = useState('curso');
 
-  // Cargar cursos al inicio
   useEffect(() => {
     cargarCursos();
     cargarConfiguracion();
@@ -95,13 +95,47 @@ function RellenarAsistencia({ user }) {
     }
   };
 
-  const seleccionarEstudiante = (estudiante) => {
+  const cargarAsistenciasEstudiante = async (estudianteId) => {
+    if (!configuracion) return [];
+    
+    try {
+      const asistenciasRef = collection(db, "escuelas", user.escuelaId, "asistencias");
+      const q = query(
+        asistenciasRef,
+        where("estudianteId", "==", estudianteId),
+        where("fecha", ">=", configuracion.fechaInicioClases),
+        where("fecha", "<=", configuracion.fechaFinClases)
+      );
+      const snapshot = await getDocs(q);
+      const fechasAsistidas = snapshot.docs.map(doc => doc.data().fecha);
+      return fechasAsistidas;
+    } catch (error) {
+      console.error("Error cargando asistencias:", error);
+      return [];
+    }
+  };
+
+  const seleccionarEstudiante = async (estudiante) => {
+    setCargando(true);
     setEstudianteSeleccionado(estudiante);
     setFechasSeleccionadas([]);
+    
+    // Cargar las fechas donde ya tiene asistencia
+    const fechasAsistidas = await cargarAsistenciasEstudiante(estudiante.id);
+    setFechasYaAsistidas(fechasAsistidas);
+    
+    setCargando(false);
   };
 
   const toggleFecha = (fecha) => {
     const fechaStr = fecha.toISOString().split('T')[0];
+    // No permitir seleccionar fechas que ya tienen asistencia
+    if (fechasYaAsistidas.includes(fechaStr)) {
+      setMensaje(`⚠️ Este día ya tiene asistencia registrada (${fechaStr})`);
+      setTimeout(() => setMensaje(''), 2000);
+      return;
+    }
+    
     if (fechasSeleccionadas.includes(fechaStr)) {
       setFechasSeleccionadas(fechasSeleccionadas.filter(f => f !== fechaStr));
     } else {
@@ -120,11 +154,11 @@ function RellenarAsistencia({ user }) {
 
     try {
       const asistenciasRef = collection(db, "escuelas", user.escuelaId, "asistencias");
-      
       let contadorNuevas = 0;
       let contadorExistentes = 0;
 
       for (const fecha of fechasSeleccionadas) {
+        // Verificar si ya existe asistencia para esa fecha
         const q = query(
           asistenciasRef,
           where("estudianteId", "==", estudianteSeleccionado.id),
@@ -159,6 +193,10 @@ function RellenarAsistencia({ user }) {
       setMensaje(`✅ Asistencia guardada: ${contadorNuevas} nuevas, ${contadorExistentes} ya existían`);
       setFechasSeleccionadas([]);
       
+      // Recargar las asistencias del estudiante para actualizar el calendario
+      const fechasActualizadas = await cargarAsistenciasEstudiante(estudianteSeleccionado.id);
+      setFechasYaAsistidas(fechasActualizadas);
+      
     } catch (error) {
       console.error("Error guardando asistencia:", error);
       setMensaje(`❌ Error: ${error.message}`);
@@ -171,11 +209,13 @@ function RellenarAsistencia({ user }) {
     setVista('curso');
     setEstudianteSeleccionado(null);
     setFechasSeleccionadas([]);
+    setFechasYaAsistidas([]);
   };
 
   const volverAListaEstudiantes = () => {
     setEstudianteSeleccionado(null);
     setFechasSeleccionadas([]);
+    setFechasYaAsistidas([]);
   };
 
   const esFechaHabil = (date) => {
@@ -186,10 +226,8 @@ function RellenarAsistencia({ user }) {
     
     if (configuracion.fechaInicioClases && fechaStr < configuracion.fechaInicioClases) return false;
     if (configuracion.fechaFinClases && fechaStr > configuracion.fechaFinClases) return false;
-    
     if (diaSemana === 0 || diaSemana === 6) return false;
     if (diasSinClases.has(fechaStr)) return false;
-    
     return true;
   };
 
@@ -201,12 +239,15 @@ function RellenarAsistencia({ user }) {
 
       {mensaje && (
         <div style={{
-          background: mensaje.includes('✅') ? colores.successLight : colores.dangerLight,
-          border: `1px solid ${mensaje.includes('✅') ? colores.success : colores.danger}`,
+          background: mensaje.includes('✅') ? colores.successLight : 
+                      mensaje.includes('⚠️') ? colores.warningLight : colores.dangerLight,
+          border: `1px solid ${mensaje.includes('✅') ? colores.success : 
+                               mensaje.includes('⚠️') ? colores.warning : colores.danger}`,
           borderRadius: '8px',
           padding: '12px',
           marginBottom: '20px',
-          color: mensaje.includes('✅') ? colores.success : colores.danger
+          color: mensaje.includes('✅') ? colores.success : 
+                 mensaje.includes('⚠️') ? colores.warning : colores.danger
         }}>
           {mensaje}
         </div>
@@ -388,8 +429,19 @@ function RellenarAsistencia({ user }) {
             <p style={{ color: colores.textoSecundario, marginBottom: '10px' }}>
               📅 Haz clic en las fechas para marcar días de asistencia
             </p>
+            <div style={{ display: 'flex', justifyContent: 'center', gap: '20px', marginBottom: '10px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                <div style={{ width: '16px', height: '16px', background: colores.success, borderRadius: '4px' }}></div>
+                <span style={{ color: colores.textoSecundario, fontSize: '12px' }}>Días con asistencia</span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                <div style={{ width: '16px', height: '16px', background: colores.warning, borderRadius: '4px' }}></div>
+                <span style={{ color: colores.textoSecundario, fontSize: '12px' }}>Días seleccionados</span>
+              </div>
+            </div>
             <p style={{ color: colores.textoSecundario, fontSize: '12px', margin: 0 }}>
-              Días seleccionados: <strong style={{ color: colores.success }}>{fechasSeleccionadas.length}</strong>
+              Días seleccionados: <strong style={{ color: colores.success }}>{fechasSeleccionadas.length}</strong> | 
+              Días ya registrados: <strong style={{ color: colores.accent }}>{fechasYaAsistidas.length}</strong>
             </p>
           </div>
 
@@ -398,6 +450,9 @@ function RellenarAsistencia({ user }) {
             value={new Date()}
             tileClassName={({ date }) => {
               const fechaStr = date.toISOString().split('T')[0];
+              if (fechasYaAsistidas.includes(fechaStr)) {
+                return 'fecha-asistida';
+              }
               if (fechasSeleccionadas.includes(fechaStr)) {
                 return 'fecha-seleccionada';
               }
@@ -444,6 +499,7 @@ function RellenarAsistencia({ user }) {
             </button>
           </div>
 
+          {/* Resumen de fechas seleccionadas */}
           {fechasSeleccionadas.length > 0 && (
             <div style={{
               marginTop: '20px',
@@ -454,10 +510,43 @@ function RellenarAsistencia({ user }) {
               overflowY: 'auto'
             }}>
               <p style={{ color: colores.texto, fontSize: '12px', marginBottom: '10px' }}>
-                Días seleccionados:
+                📅 Días seleccionados para agregar:
               </p>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
                 {fechasSeleccionadas.sort().map(fecha => (
+                  <span
+                    key={fecha}
+                    style={{
+                      background: colores.warningLight,
+                      color: colores.warning,
+                      padding: '4px 10px',
+                      borderRadius: '20px',
+                      fontSize: '12px',
+                      fontWeight: 'bold'
+                    }}
+                  >
+                    {fecha}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Resumen de días ya asistidos */}
+          {fechasYaAsistidas.length > 0 && (
+            <div style={{
+              marginTop: '15px',
+              padding: '15px',
+              background: colores.successLight,
+              borderRadius: '8px',
+              maxHeight: '150px',
+              overflowY: 'auto'
+            }}>
+              <p style={{ color: colores.texto, fontSize: '12px', marginBottom: '10px' }}>
+                ✅ Días con asistencia registrada (no se pueden modificar):
+              </p>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                {fechasYaAsistidas.sort().map(fecha => (
                   <span
                     key={fecha}
                     style={{
@@ -465,7 +554,8 @@ function RellenarAsistencia({ user }) {
                       color: colores.success,
                       padding: '4px 10px',
                       borderRadius: '20px',
-                      fontSize: '12px'
+                      fontSize: '12px',
+                      border: `1px solid ${colores.success}`
                     }}
                   >
                     {fecha}
@@ -524,10 +614,17 @@ function RellenarAsistencia({ user }) {
           background: ${colores.accent} !important;
           color: white !important;
         }
-        .fecha-seleccionada {
+        .fecha-asistida {
           background: ${colores.successLight} !important;
           color: ${colores.success} !important;
           border-radius: 6px;
+          border: 1px solid ${colores.success} !important;
+        }
+        .fecha-seleccionada {
+          background: ${colores.warningLight} !important;
+          color: ${colores.warning} !important;
+          border-radius: 6px;
+          border: 1px solid ${colores.warning} !important;
         }
         .fecha-no-habil {
           background: ${colores.dangerLight} !important;

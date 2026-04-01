@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../firebase';
 
+
+
 function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -87,7 +89,7 @@ function Login() {
           <div style={{
             width: '80px',
             height: '80px',
-            background: 'linear-gradient(135deg, #fbbf24, #f59e0b)',
+
             borderRadius: '20px',
             display: 'flex',
             alignItems: 'center',
@@ -95,14 +97,21 @@ function Login() {
             fontSize: '40px',
             margin: '0 auto 20px'
           }}>
-            📱
+<div> 
+  <img src="/logo.png" alt="Logo" style={{
+    width: '80px',
+    height: '80px',
+    borderRadius: '20px',
+    objectFit: 'cover'
+  }} />
+</div>
           </div>
           <h1 style={{
             color: 'white',
             fontSize: '28px',
             fontWeight: 'bold',
             margin: '0 0 8px 0'
-          }}>QR Assist</h1>
+          }}>Educ Assist</h1>
           <p style={{
             color: 'rgba(255,255,255,0.7)',
             fontSize: '14px',
@@ -226,7 +235,7 @@ function Login() {
             fontSize: '12px',
             margin: '0 0 8px 0'
           }}>
-            🔑 Para recuperar de contraseña hablar con el  admin
+            🔑 Para recuperar la contraseña hablar con el  admin
           </p>
           <p style={{
             color: 'rgba(255,255,255,0.8)',
