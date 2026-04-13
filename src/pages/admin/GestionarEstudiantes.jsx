@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { collection, getDocs, addDoc, query, where } from 'firebase/firestore';
 import { db } from '../../firebase';
 import logoColegio from '../../assets/logo-colegio.png';
+import { collection, getDocs, addDoc, query, where, updateDoc, deleteDoc, doc, writeBatch } from 'firebase/firestore';
 
 // Paleta de colores suaves
 const colores = {
@@ -30,7 +30,16 @@ function GestionarEstudiantes({ user }) {
   const [exito, setExito] = useState('');
   const [busqueda, setBusqueda] = useState('');
   const [filtroCurso, setFiltroCurso] = useState('todos');
+  const [editando, setEditando] = useState(null);
   const [formData, setFormData] = useState({
+    nombres: '',
+    apellidoPaterno: '',
+    apellidoMaterno: '',
+    rut: '',
+    cursoId: '',
+    fechaNacimiento: '', 
+  });
+  const [editFormData, setEditFormData] = useState({
     nombres: '',
     apellidoPaterno: '',
     apellidoMaterno: '',
@@ -38,6 +47,8 @@ function GestionarEstudiantes({ user }) {
     cursoId: '',
     fechaNacimiento: ''
   });
+  const [mostrarModalEdicion, setMostrarModalEdicion] = useState(false);
+  const [eliminandoId, setEliminandoId] = useState(null);
 
   const cargarDatos = async () => {
     try {
@@ -231,9 +242,256 @@ function GestionarEstudiantes({ user }) {
     }
   };
 
+    // Abrir modal de edición
+  const abrirEdicion = (estudiante) => {
+    setEditando(estudiante);
+    setEditFormData({
+      nombres: estudiante.nombres || '',
+      apellidoPaterno: estudiante.apellidoPaterno || '',
+      apellidoMaterno: estudiante.apellidoMaterno || '',
+      rut: estudiante.rut || '',
+      cursoId: estudiante.cursoId || '',
+      fechaNacimiento: estudiante.fechaNacimiento || ''
+    });
+    setMostrarModalEdicion(true);
+  };
+
+  // Guardar cambios del estudiante
+  const guardarEdicion = async (e) => {
+    e.preventDefault();
+    setCargando(true);
+    setError('');
+    setExito('');
+
+    try {
+      const estudianteRef = doc(db, "escuelas", user.escuelaId, "estudiantes", editando.id);
+      
+      // Si cambió el curso, actualizar el QR
+      let qrCode = editando.qrCode;
+      if (editando.cursoId !== editFormData.cursoId) {
+        const cursoSeleccionado = cursos.find(c => c.id === editFormData.cursoId);
+        qrCode = generarQRCode(editFormData.rut, cursoSeleccionado.nombre);
+      }
+
+      await updateDoc(estudianteRef, {
+        nombres: editFormData.nombres,
+        apellidoPaterno: editFormData.apellidoPaterno,
+        apellidoMaterno: editFormData.apellidoMaterno || '',
+        rut: editFormData.rut,
+        cursoId: editFormData.cursoId,
+        curso: cursos.find(c => c.id === editFormData.cursoId)?.nombre || '',
+        qrCode: qrCode,
+        fechaNacimiento: editFormData.fechaNacimiento || ''
+      });
+
+      setExito(`✅ Estudiante actualizado correctamente`);
+      setMostrarModalEdicion(false);
+      setEditando(null);
+      cargarDatos();
+
+    } catch (error) {
+      console.error("Error actualizando estudiante:", error);
+      setError("Error: " + error.message);
+    } finally {
+      setCargando(false);
+    }
+  };
+
+  // Eliminar estudiante
+  const eliminarEstudiante = async (estudianteId) => {
+    if (!window.confirm('¿Estás seguro de que deseas eliminar este estudiante? Esta acción no se puede deshacer.')) {
+      return;
+    }
+
+    setCargando(true);
+    setError('');
+    setExito('');
+
+    try {
+      const estudianteRef = doc(db, "escuelas", user.escuelaId, "estudiantes", estudianteId);
+      await deleteDoc(estudianteRef);
+      
+      setExito(`✅ Estudiante eliminado correctamente`);
+      cargarDatos();
+    } catch (error) {
+      console.error("Error eliminando estudiante:", error);
+      setError("Error: " + error.message);
+    } finally {
+      setCargando(false);
+    }
+  };
+
+  // Cambiar de curso a múltiples estudiantes
+  const cambiarCursoMultiple = async (estudiantesIds, nuevoCursoId) => {
+    if (!window.confirm(`¿Cambiar ${estudiantesIds.length} estudiante(s) al curso ${cursos.find(c => c.id === nuevoCursoId)?.nombre}?`)) {
+      return;
+    }
+
+    setCargando(true);
+    setError('');
+    setExito('');
+
+    try {
+      const batch = writeBatch(db);
+      const nuevoCurso = cursos.find(c => c.id === nuevoCursoId);
+      
+      for (const estudianteId of estudiantesIds) {
+        const estudiante = estudiantes.find(e => e.id === estudianteId);
+        const nuevoQrCode = generarQRCode(estudiante.rut, nuevoCurso.nombre);
+        
+        const estudianteRef = doc(db, "escuelas", user.escuelaId, "estudiantes", estudianteId);
+        batch.update(estudianteRef, {
+          cursoId: nuevoCursoId,
+          curso: nuevoCurso.nombre,
+          qrCode: nuevoQrCode
+        });
+      }
+      
+      await batch.commit();
+      setExito(`✅ ${estudiantesIds.length} estudiante(s) cambiado(s) de curso correctamente`);
+      cargarDatos();
+    } catch (error) {
+      console.error("Error cambiando curso:", error);
+      setError("Error: " + error.message);
+    } finally {
+      setCargando(false);
+    }
+  };
+
   const getCursoNombre = (cursoId) => {
     const curso = cursos.find(c => c.id === cursoId);
     return curso ? curso.nombre : 'N/A';
+  };
+
+
+  // Modal de edición
+  const ModalEdicion = () => {
+    if (!mostrarModalEdicion) return null;
+    
+    return (
+      <div style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        background: 'rgba(0,0,0,0.5)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        zIndex: 1000
+      }}>
+        <div style={{
+          background: colores.tarjeta,
+          borderRadius: '16px',
+          padding: '25px',
+          width: '90%',
+          maxWidth: '500px',
+          maxHeight: '90vh',
+          overflowY: 'auto',
+          boxShadow: '0 10px 40px rgba(0,0,0,0.2)'
+        }}>
+          <h3 style={{ color: colores.texto, marginTop: 0 }}>✏️ Editar Estudiante</h3>
+          <form onSubmit={guardarEdicion}>
+            <div style={{ marginBottom: '15px' }}>
+              <label style={{ color: colores.textoSecundario, display: 'block', marginBottom: '5px' }}>Nombres *</label>
+              <input
+                type="text"
+                required
+                value={editFormData.nombres}
+                onChange={(e) => setEditFormData({...editFormData, nombres: e.target.value})}
+                style={{ width: '100%', padding: '10px', border: `1px solid ${colores.borde}`, borderRadius: '8px', color: colores.texto }}
+              />
+            </div>
+            <div style={{ marginBottom: '15px' }}>
+              <label style={{ color: colores.textoSecundario, display: 'block', marginBottom: '5px' }}>Apellido Paterno *</label>
+              <input
+                type="text"
+                required
+                value={editFormData.apellidoPaterno}
+                onChange={(e) => setEditFormData({...editFormData, apellidoPaterno: e.target.value})}
+                style={{ width: '100%', padding: '10px', border: `1px solid ${colores.borde}`, borderRadius: '8px', color: colores.texto }}
+              />
+            </div>
+            <div style={{ marginBottom: '15px' }}>
+              <label style={{ color: colores.textoSecundario, display: 'block', marginBottom: '5px' }}>Apellido Materno</label>
+              <input
+                type="text"
+                value={editFormData.apellidoMaterno}
+                onChange={(e) => setEditFormData({...editFormData, apellidoMaterno: e.target.value})}
+                style={{ width: '100%', padding: '10px', border: `1px solid ${colores.borde}`, borderRadius: '8px', color: colores.texto }}
+              />
+            </div>
+            <div style={{ marginBottom: '15px' }}>
+              <label style={{ color: colores.textoSecundario, display: 'block', marginBottom: '5px' }}>RUT *</label>
+              <input
+                type="text"
+                required
+                value={editFormData.rut}
+                onChange={(e) => setEditFormData({...editFormData, rut: e.target.value})}
+                style={{ width: '100%', padding: '10px', border: `1px solid ${colores.borde}`, borderRadius: '8px', color: colores.texto }}
+              />
+            </div>
+            <div style={{ marginBottom: '15px' }}>
+              <label style={{ color: colores.textoSecundario, display: 'block', marginBottom: '5px' }}>Curso *</label>
+              <select
+                required
+                value={editFormData.cursoId}
+                onChange={(e) => setEditFormData({...editFormData, cursoId: e.target.value})}
+                style={{ width: '100%', padding: '10px', border: `1px solid ${colores.borde}`, borderRadius: '8px', color: colores.texto }}
+              >
+                <option value="">Seleccionar curso</option>
+                {cursos.map(curso => (
+                  <option key={curso.id} value={curso.id}>{curso.nombre}</option>
+                ))}
+              </select>
+            </div>
+            <div style={{ marginBottom: '20px' }}>
+              <label style={{ color: colores.textoSecundario, display: 'block', marginBottom: '5px' }}>Fecha Nacimiento</label>
+              <input
+                type="date"
+                value={editFormData.fechaNacimiento}
+                onChange={(e) => setEditFormData({...editFormData, fechaNacimiento: e.target.value})}
+                style={{ width: '100%', padding: '10px', border: `1px solid ${colores.borde}`, borderRadius: '8px', color: colores.texto }}
+              />
+            </div>
+            <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+              <button
+                type="button"
+                onClick={() => {
+                  setMostrarModalEdicion(false);
+                  setEditando(null);
+                }}
+                style={{
+                  padding: '10px 20px',
+                  background: colores.textoSecundario,
+                  border: 'none',
+                  borderRadius: '8px',
+                  color: 'white',
+                  cursor: 'pointer'
+                }}
+              >
+                Cancelar
+              </button>
+              <button
+                type="submit"
+                disabled={cargando}
+                style={{
+                  padding: '10px 20px',
+                  background: cargando ? colores.textoSecundario : colores.success,
+                  border: 'none',
+                  borderRadius: '8px',
+                  color: 'white',
+                  cursor: cargando ? 'not-allowed' : 'pointer'
+                }}
+              >
+                {cargando ? 'Guardando...' : 'Guardar Cambios'}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    );
   };
 
   return (
@@ -449,8 +707,56 @@ function GestionarEstudiantes({ user }) {
                         <button onClick={() => descargarQR(est)} style={{ background: colores.accentLight, border: `1px solid ${colores.accent}`, borderRadius: '4px', padding: '2px 6px', color: colores.accent, fontSize: '10px', cursor: 'pointer' }}>📥 QR</button>
                       </div>
                     </td>
-                    <td style={{ padding: '12px', textAlign: 'center' }}>
-                      <button onClick={() => descargarQR(est)} style={{ background: colores.accent, border: 'none', borderRadius: '5px', padding: '5px 12px', color: 'white', cursor: 'pointer', fontSize: '12px' }}>Ver QR</button>
+                                        <td style={{ padding: '12px', textAlign: 'center' }}>
+                      <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
+                        <button
+                          onClick={() => abrirEdicion(est)}
+                          style={{
+                            background: colores.warning,
+                            border: 'none',
+                            borderRadius: '5px',
+                            padding: '5px 10px',
+                            color: 'white',
+                            cursor: 'pointer',
+                            fontSize: '11px'
+                          }}
+                          title="Editar estudiante"
+                        >
+                          ✏️ Editar
+                        </button>
+                        <button
+                          onClick={() => eliminarEstudiante(est.id)}
+                          style={{
+                            background: colores.danger,
+                            border: 'none',
+                            borderRadius: '5px',
+                            padding: '5px 10px',
+                            color: 'white',
+                            cursor: 'pointer',
+                            fontSize: '11px'
+                          }}
+                          title="Eliminar estudiante"
+                        >
+                          🗑️ Eliminar
+                        </button>
+                        <button
+                          onClick={() => descargarQR(est)}
+                          style={{
+                            background: colores.accent,
+                            border: 'none',
+                            borderRadius: '5px',
+                            padding: '5px 10px',
+                            color: 'white',
+                            cursor: 'pointer',
+                            fontSize: '11px'
+                          }}
+                          title="Ver QR"
+                        >
+                          📱 QR
+                        </button>
+
+                        
+                      </div>
                     </td>
                   </tr>
                 ))
@@ -459,6 +765,8 @@ function GestionarEstudiantes({ user }) {
           </table>
         </div>
       </div>
+      {/* Modal de edición */}
+      <ModalEdicion />
     </div>
   );
 }
