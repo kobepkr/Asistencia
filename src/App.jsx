@@ -105,37 +105,116 @@ function App() {
   }, []);
 
   // Mostrar pantalla de carga mientras verificamos
-  if (cargando) {
-    console.log("⏳ Mostrando pantalla de carga...");
-    return (
+if (cargando) {
+  return (
+    <div style={{
+      minHeight: '100vh',
+      background: 'linear-gradient(135deg, #f0f7ff 0%, #e1eaf5 100%)',
+      display: 'flex',
+      justifyContent: 'center',
+      alignItems: 'center'
+    }}>
       <div style={{
-        minHeight: '100vh',
-        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center'
+        background: 'white',
+        borderRadius: '24px',
+        padding: '40px',
+        textAlign: 'center',
+        boxShadow: '0 20px 40px rgba(0, 0, 0, 0.1)',
+        border: '1px solid #d3e2f2',
+        maxWidth: '300px'
       }}>
+        {/* Logo animado */}
         <div style={{
-          background: 'rgba(255,255,255,0.1)',
-          backdropFilter: 'blur(10px)',
+          width: '80px',
+          height: '80px',
+          margin: '0 auto 20px',
           borderRadius: '20px',
-          padding: '40px',
-          textAlign: 'center'
+          overflow: 'hidden',
+          boxShadow: '0 5px 15px rgba(79, 126, 179, 0.2)',
+          animation: 'pulse 1.5s ease-in-out infinite'
         }}>
-          <div style={{
-            width: '50px',
-            height: '50px',
-            border: '3px solid rgba(255,255,255,0.3)',
-            borderTopColor: 'white',
+          <img 
+            src="/logo.png" 
+            alt="Logo" 
+            style={{
+              width: '100%',
+              height: '100%',
+              objectFit: 'cover'
+            }}
+          />
+        </div>
+        
+        {/* Texto de carga */}
+        <h3 style={{
+          color: '#2c3e50',
+          fontSize: '20px',
+          fontWeight: 'bold',
+          margin: '0 0 8px 0'
+        }}>
+          Educ Assist
+        </h3>
+        
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: '4px',
+          marginTop: '15px'
+        }}>
+          <span style={{
+            width: '8px',
+            height: '8px',
+            background: '#4f7eb3',
             borderRadius: '50%',
-            margin: '0 auto 20px',
-            animation: 'spin 1s linear infinite'
-          }}></div>
-          <p style={{ color: 'white' }}>Cargando...</p>
+            animation: 'dotPulse 1.4s infinite ease-in-out',
+            animationDelay: '0ms'
+          }}></span>
+          <span style={{
+            width: '8px',
+            height: '8px',
+            background: '#4f7eb3',
+            borderRadius: '50%',
+            animation: 'dotPulse 1.4s infinite ease-in-out',
+            animationDelay: '200ms'
+          }}></span>
+          <span style={{
+            width: '8px',
+            height: '8px',
+            background: '#4f7eb3',
+            borderRadius: '50%',
+            animation: 'dotPulse 1.4s infinite ease-in-out',
+            animationDelay: '400ms'
+          }}></span>
+          <span style={{ color: '#5e6f8d', fontSize: '14px', marginLeft: '8px' }}>Cargando...</span>
         </div>
       </div>
-    );
-  }
+
+      <style>{`
+        @keyframes pulse {
+          0%, 100% {
+            transform: scale(1);
+            opacity: 1;
+          }
+          50% {
+            transform: scale(1.05);
+            opacity: 0.9;
+          }
+        }
+        
+        @keyframes dotPulse {
+          0%, 60%, 100% {
+            transform: scale(0.8);
+            opacity: 0.4;
+          }
+          30% {
+            transform: scale(1.2);
+            opacity: 1;
+          }
+        }
+      `}</style>
+    </div>
+  );
+}
 
   // Si no hay usuario, mostrar login
   if (!user) {

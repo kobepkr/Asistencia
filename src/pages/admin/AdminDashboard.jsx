@@ -10,7 +10,7 @@ import ReportesEscuela from './ReportesEscuela';
 import CalendarioEscolar from './CalendarioEscolar';
 import RellenarAsistencia from './RellenarAsistencia';
 import ReporteCurso from './ReporteCurso';
-
+import AsistenciaMensual from './AsistenciaMensual';
 
 
 
@@ -57,6 +57,7 @@ function AdminDashboard({ user }) {
     { id: 'estudiantes', nombre: 'Estudiantes', icono: '👨‍🎓' },
     { id: 'calendario', nombre: 'Calendario', icono: '📅' }, 
     { id: 'reportes', nombre: 'Reportes', icono: '📊' },
+    { id: 'asistencia_mensual', nombre: 'Asistencia Mensual', icono: '📅' },
     { id: 'rellenar', nombre: 'Rellenar Asistencia', icono: '📝' },
     { id: 'reporte_curso', nombre: 'Asistencia por Curso', icono: '🏆' } 
   ];
@@ -80,6 +81,8 @@ function AdminDashboard({ user }) {
     // 👇 PON EL NUEVO CASO AQUÍ, DESPUÉS DE LOS OTROS
     case 'reporte_curso':
       return <ReporteCurso user={user} />;
+    case 'asistencia_mensual':
+      return <AsistenciaMensual user={user} />;
     default:
       return <AdminLectorQR user={user} />;
   }

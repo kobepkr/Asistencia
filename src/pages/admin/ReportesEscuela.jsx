@@ -22,14 +22,26 @@ const colores = {
 
 function ReportesEscuela({ user }) {
   const [estudiantes, setEstudiantes] = useState([]);
+  const [cursos, setCursos] = useState([]);
   const [cargando, setCargando] = useState(false);
   const [configuracion, setConfiguracion] = useState(null);
+
+  
+  const meses = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
   
   // Estados para búsqueda por RUT
   const [rutBusqueda, setRutBusqueda] = useState('');
   const [estudianteEncontrado, setEstudianteEncontrado] = useState(null);
   const [asistenciasEstudiante, setAsistenciasEstudiante] = useState([]);
   const [buscando, setBuscando] = useState(false);
+
+    // Estados para reporte por curso
+  const [mesReporte, setMesReporte] = useState(new Date().getMonth());
+  const [añoReporte, setAñoReporte] = useState(new Date().getFullYear());
+  const [cargandoCursos, setCargandoCursos] = useState(false);
+  const [reporteCursos, setReporteCursos] = useState([]);
+  const [mejorCurso, setMejorCurso] = useState(null);
+
   
   // Estados para filtros de porcentaje
   const [filtroPorcentaje, setFiltroPorcentaje] = useState('todos');
@@ -40,6 +52,8 @@ function ReportesEscuela({ user }) {
     totalEstudiantes: 0,
     mayor85: 0,
     menor85: 0
+
+    
   });
   
   // Cargar datos al inicio
@@ -198,6 +212,144 @@ function ReportesEscuela({ user }) {
       setBuscando(false);
     }
   };
+
+    // Calcular días hábiles de un mes específico
+  const calcularDiasHabilesMes = (mes, año) => {
+    const ultimoDia = new Date(año, mes + 1, 0);
+    let diasHabiles = 0;
+    for (let i = 1; i <= ultimoDia.getDate(); i++) {
+      const fecha = new Date(año, mes, i);
+      const diaSemana = fecha.getDay();
+      const fechaStr = `${año}-${String(mes + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
+      const esFinde = diaSemana === 0 || diaSemana === 6;
+      const esFestivo = configuracion?.diasSinClases?.includes(fechaStr) || false;
+      if (!esFinde && !esFestivo) {
+        diasHabiles++;
+      }
+    }
+    return diasHabiles;
+  };
+
+  // Calcular asistencia de un curso en un mes específico
+  const calcularAsistenciaCursoMes = async (cursoNombre, mes, año) => {
+    try {
+      // Obtener estudiantes del curso
+      const estudiantesRef = collection(db, "escuelas", user.escuelaId, "estudiantes");
+      const qEstudiantes = query(estudiantesRef, where("curso", "==", cursoNombre));
+      const estudiantesSnap = await getDocs(qEstudiantes);
+      const estudiantesIds = estudiantesSnap.docs.map(doc => doc.id);
+      
+      if (estudiantesIds.length === 0) {
+        return { totalEstudiantes: 0, totalPresentes: 0, totalPosibles: 0, porcentaje: 0 };
+      }
+      
+      // Días hábiles del mes
+      const diasHabiles = calcularDiasHabilesMes(mes, año);
+      
+      // Obtener asistencias del mes
+      const asistenciasRef = collection(db, "escuelas", user.escuelaId, "asistencias");
+      const inicioMes = `${año}-${String(mes + 1).padStart(2, '0')}-01`;
+      const finMes = `${año}-${String(mes + 1).padStart(2, '0')}-${new Date(año, mes + 1, 0).getDate()}`;
+      
+      const qAsistencias = query(
+        asistenciasRef,
+        where("fecha", ">=", inicioMes),
+        where("fecha", "<=", finMes),
+        where("presente", "==", true)
+      );
+      const asistenciasSnap = await getDocs(qAsistencias);
+      
+      // Contar asistencias solo de estudiantes de este curso
+      let totalPresentes = 0;
+      asistenciasSnap.docs.forEach(doc => {
+        const data = doc.data();
+        if (estudiantesIds.includes(data.estudianteId)) {
+          totalPresentes++;
+        }
+      });
+      
+      const totalPosibles = estudiantesIds.length * diasHabiles;
+      const porcentaje = totalPosibles > 0 ? Math.round((totalPresentes / totalPosibles) * 100) : 0;
+      
+      return {
+        totalEstudiantes: estudiantesIds.length,
+        totalPresentes: totalPresentes,
+        totalPosibles: totalPosibles,
+        porcentaje: porcentaje
+      };
+    } catch (error) {
+      console.error(`Error calculando asistencia para ${cursoNombre}:`, error);
+      return { totalEstudiantes: 0, totalPresentes: 0, totalPosibles: 0, porcentaje: 0 };
+    }
+  };
+
+  // Generar reporte de todos los cursos
+  const generarReporteCursos = async () => {
+    if (cursos.length === 0) {
+      await cargarCursos();
+    }
+    
+    setCargandoCursos(true);
+    try {
+      const resultados = [];
+      for (const curso of cursos) {
+        const stats = await calcularAsistenciaCursoMes(curso.nombre, mesReporte, añoReporte);
+        resultados.push({
+          ...curso,
+          ...stats
+        });
+      }
+      
+      // Ordenar por porcentaje (mayor a menor)
+      resultados.sort((a, b) => b.porcentaje - a.porcentaje);
+      setReporteCursos(resultados);
+      
+      // Encontrar el mejor curso
+      if (resultados.length > 0 && resultados[0].porcentaje > 0) {
+        setMejorCurso(resultados[0]);
+      } else {
+        setMejorCurso(null);
+      }
+    } catch (error) {
+      console.error("Error generando reporte:", error);
+    } finally {
+      setCargandoCursos(false);
+    }
+  };
+
+  // Exportar reporte de cursos a Excel
+  const exportarReporteCursosExcel = () => {
+    const datosExportar = reporteCursos.map(curso => ({
+      'Curso': curso.nombre,
+      'Estudiantes': curso.totalEstudiantes,
+      'Total Asistencias': curso.totalPresentes,
+      'Total Posibles': curso.totalPosibles,
+      'Porcentaje': `${curso.porcentaje}%`
+    }));
+
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.json_to_sheet(datosExportar);
+    XLSX.utils.book_append_sheet(wb, ws, `Reporte_Cursos_${meses[mesReporte]}_${añoReporte}`);
+    XLSX.writeFile(wb, `reporte_cursos_${meses[mesReporte]}_${añoReporte}.xlsx`);
+  };
+
+  // Cargar cursos (agrega esta función si no existe)
+  const cargarCursos = async () => {
+    try {
+      const cursosRef = collection(db, "escuelas", user.escuelaId, "cursos");
+      const snapshot = await getDocs(cursosRef);
+      const lista = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+        nombre: doc.data().nombre || `${doc.data().grado}° ${doc.data().letra}`
+      }));
+      setCursos(lista.sort((a, b) => a.nombre.localeCompare(b.nombre)));
+    } catch (error) {
+      console.error("Error cargando cursos:", error);
+    }
+  };
+
+
 
   // Aplicar filtro por porcentaje
   // Aplicar filtro por porcentaje
@@ -606,6 +758,233 @@ const aplicarFiltroPorcentaje = async () => {
           )}
         </div>
       )}
+
+            {/* Reporte por Curso - Asistencia Mensual */}
+      <div style={{
+        background: colores.tarjeta,
+        borderRadius: '12px',
+        padding: '20px',
+        marginBottom: '20px',
+        border: `1px solid ${colores.borde}`,
+        boxShadow: '0 2px 4px rgba(0, 0, 0, 0.05)'
+      }}>
+        <h3 style={{ color: colores.texto, marginTop: 0, marginBottom: '15px', fontSize: '1.1rem' }}>
+          📊 Asistencia por Curso - Ranking Mensual
+        </h3>
+        
+        <div style={{ display: 'flex', gap: '15px', alignItems: 'center', flexWrap: 'wrap', marginBottom: '20px' }}>
+          <div style={{ minWidth: '150px' }}>
+            <label style={{ color: colores.textoSecundario, display: 'block', marginBottom: '4px', fontSize: '11px' }}>📅 Seleccionar Mes</label>
+            <select
+              value={mesReporte}
+              onChange={(e) => setMesReporte(parseInt(e.target.value))}
+              style={{
+                width: '100%',
+                padding: '8px 12px',
+                border: `1px solid ${colores.borde}`,
+                borderRadius: '8px',
+                color: colores.texto,
+                fontSize: '13px',
+                cursor: 'pointer'
+              }}
+            >
+              {meses.map((mes, idx) => (
+                <option key={idx} value={idx}>{mes}</option>
+              ))}
+            </select>
+          </div>
+          
+          <div style={{ minWidth: '100px' }}>
+            <label style={{ color: colores.textoSecundario, display: 'block', marginBottom: '4px', fontSize: '11px' }}>📅 Año</label>
+            <input
+              type="number"
+              value={añoReporte}
+              onChange={(e) => setAñoReporte(parseInt(e.target.value))}
+              style={{
+                width: '100%',
+                padding: '8px 12px',
+                border: `1px solid ${colores.borde}`,
+                borderRadius: '8px',
+                color: colores.texto,
+                fontSize: '13px'
+              }}
+            />
+          </div>
+          
+          <button
+            onClick={generarReporteCursos}
+            disabled={cargandoCursos}
+            style={{
+              height: '40px',
+              padding: '0 25px',
+              background: cargandoCursos ? colores.textoSecundario : colores.accent,
+              border: 'none',
+              borderRadius: '8px',
+              color: 'white',
+              fontSize: '14px',
+              fontWeight: 'bold',
+              cursor: cargandoCursos ? 'not-allowed' : 'pointer',
+              marginTop: '22px',
+              transition: 'all 0.3s'
+            }}
+          >
+            {cargandoCursos ? 'Calculando...' : 'Generar Reporte'}
+          </button>
+        </div>
+
+        {/* Resultados del reporte por curso */}
+        {reporteCursos.length > 0 && (
+          <>
+            {/* Tarjeta del mejor curso */}
+            {mejorCurso && (
+              <div style={{
+                background: `linear-gradient(135deg, ${colores.successLight} 0%, ${colores.accentLight} 100%)`,
+                borderRadius: '12px',
+                padding: '15px 20px',
+                marginBottom: '20px',
+                border: `1px solid ${colores.success}`,
+                textAlign: 'center'
+              }}>
+                <div style={{ fontSize: '14px', color: colores.textoSecundario }}>🏆 Curso con mejor asistencia del mes</div>
+                <div style={{ fontSize: '28px', fontWeight: 'bold', color: colores.success, margin: '5px 0' }}>
+                  {mejorCurso.nombre}
+                </div>
+                <div style={{ fontSize: '18px', color: colores.texto }}>
+                  {mejorCurso.porcentaje}% de asistencia
+                </div>
+                <div style={{ fontSize: '12px', color: colores.textoSecundario, marginTop: '5px' }}>
+                  {mejorCurso.totalPresentes} asistencias de {mejorCurso.totalPosibles} posibles
+                </div>
+              </div>
+            )}
+
+            {/* Gráfico de barras simple (sin dependencias externas) */}
+            <div style={{ marginBottom: '20px', overflowX: 'auto' }}>
+              <h4 style={{ color: colores.texto, marginBottom: '10px' }}>📊 Gráfico de asistencia por curso</h4>
+              <div style={{ minWidth: '400px' }}>
+                {reporteCursos.map((curso, idx) => {
+                  const maxPorcentaje = Math.max(...reporteCursos.map(c => c.porcentaje), 1);
+                  const barraWidth = (curso.porcentaje / maxPorcentaje) * 100;
+                  const esMejor = mejorCurso?.nombre === curso.nombre;
+                  
+                  return (
+                    <div key={idx} style={{ marginBottom: '12px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+                        <span style={{ color: colores.texto, fontSize: '13px', fontWeight: esMejor ? 'bold' : 'normal' }}>
+                          {curso.nombre}
+                          {esMejor && <span style={{ marginLeft: '8px', fontSize: '12px' }}>🏆</span>}
+                        </span>
+                        <span style={{ 
+                          color: curso.porcentaje >= 85 ? colores.success : (curso.porcentaje >= 50 ? colores.warning : colores.danger),
+                          fontWeight: 'bold',
+                          fontSize: '13px'
+                        }}>
+                          {curso.porcentaje}%
+                        </span>
+                      </div>
+                      <div style={{
+                        width: '100%',
+                        height: '28px',
+                        background: colores.accentLight,
+                        borderRadius: '14px',
+                        overflow: 'hidden'
+                      }}>
+                        <div style={{
+                          width: `${barraWidth}%`,
+                          height: '100%',
+                          background: `linear-gradient(90deg, ${esMejor ? colores.success : colores.accent}, ${esMejor ? colores.success : colores.accent})`,
+                          borderRadius: '14px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'flex-end',
+                          paddingRight: '8px',
+                          color: 'white',
+                          fontSize: '11px',
+                          fontWeight: 'bold',
+                          transition: 'width 0.5s ease'
+                        }}>
+                          {barraWidth > 15 && `${curso.porcentaje}%`}
+                        </div>
+                      </div>
+                      <div style={{ fontSize: '10px', color: colores.textoSecundario, marginTop: '2px' }}>
+                        {curso.totalPresentes} asistencias / {curso.totalPosibles} posibles
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Tabla de cursos */}
+            <div style={{ overflowX: 'auto', border: `1px solid ${colores.borde}`, borderRadius: '8px' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <thead style={{ background: colores.accentLight }}>
+                  <tr>
+                    <th style={{ padding: '10px', textAlign: 'left', color: colores.texto }}>#</th>
+                    <th style={{ padding: '10px', textAlign: 'left', color: colores.texto }}>Curso</th>
+                    <th style={{ padding: '10px', textAlign: 'center', color: colores.texto }}>Estudiantes</th>
+                    <th style={{ padding: '10px', textAlign: 'center', color: colores.texto }}>Asistencias</th>
+                    <th style={{ padding: '10px', textAlign: 'center', color: colores.texto }}>Posibles</th>
+                    <th style={{ padding: '10px', textAlign: 'center', color: colores.texto }}>% Asistencia</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {reporteCursos.map((curso, index) => (
+                    <tr key={index} style={{
+                      borderBottom: `1px solid ${colores.borde}`,
+                      background: mejorCurso?.nombre === curso.nombre ? colores.successLight : (index % 2 === 0 ? 'transparent' : colores.accentLight)
+                    }}>
+                      <td style={{ padding: '10px', color: colores.textoSecundario }}>{index + 1}</td>
+                      <td style={{ padding: '10px', color: colores.texto, fontWeight: mejorCurso?.nombre === curso.nombre ? 'bold' : 'normal' }}>
+                        {curso.nombre}
+                        {mejorCurso?.nombre === curso.nombre && <span style={{ marginLeft: '8px' }}>🏆</span>}
+                      </td>
+                      <td style={{ padding: '10px', textAlign: 'center', color: colores.textoSecundario }}>{curso.totalEstudiantes}</td>
+                      <td style={{ padding: '10px', textAlign: 'center', color: colores.success, fontWeight: 'bold' }}>{curso.totalPresentes}</td>
+                      <td style={{ padding: '10px', textAlign: 'center', color: colores.textoSecundario }}>{curso.totalPosibles}</td>
+                      <td style={{ padding: '10px', textAlign: 'center' }}>
+                        <span style={{
+                          background: curso.porcentaje >= 85 ? colores.successLight : (curso.porcentaje >= 50 ? colores.warningLight : colores.dangerLight),
+                          color: curso.porcentaje >= 85 ? colores.success : (curso.porcentaje >= 50 ? colores.warning : colores.danger),
+                          padding: '4px 10px',
+                          borderRadius: '20px',
+                          fontSize: '12px',
+                          fontWeight: 'bold'
+                        }}>
+                          {curso.porcentaje}%
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            
+            <button
+              onClick={exportarReporteCursosExcel}
+              style={{
+                marginTop: '15px',
+                height: '36px',
+                padding: '0 20px',
+                background: colores.warning,
+                border: 'none',
+                borderRadius: '8px',
+                color: 'white',
+                fontSize: '14px',
+                fontWeight: 'bold',
+                cursor: 'pointer',
+                transition: 'all 0.3s'
+              }}
+            >
+              📥 Exportar reporte de cursos a Excel
+            </button>
+          </>
+        )}
+      </div>
+
+
+
+
     </div>
   );
 }
